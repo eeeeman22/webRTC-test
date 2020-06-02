@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <video id="video-element"></video>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      console.log('socket id', socket);
+      let userList = [];
+      socket.on('add-user', (users) => {
+        userList = users;
+        console.log('add-user', userList);
+      });
+      socket.on('remove-user', (users) => {
+        userList = users;
+        console.log('remove-users', userList);
+      });
+
+      const constraints = {
+        video: true,
+        // audio: true,
+      };
+      let video = null;
+      if (
+        !(
+          'mediaDevices' in navigator &&
+          'getUserMedia' in navigator.mediaDevices
+        )
+      ) {
+        document.body.innerHTML = 'Browser unsupported';
+      }
+      navigator.mediaDevices
+        .getUserMedia(constraints)
+        .then((data) => {
+          video = document.getElementById('video-element');
+          video.srcObject = data;
+          video.autoplay = true;
+          //   video.src = window.URL.createObjectURL(data);
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+    </script>
+  </body>
+</html>
