@@ -9,38 +9,58 @@
     <video id="video-element"></video>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io();
-      console.log('socket id', socket);
+      // set up socket
       let userList = [];
-      socket.on('add-user', (users) => {
-        userList = users;
-        console.log('add-user', userList);
+      const pc = new RTCPeerConnection();
+      const socket = io();
+      socket.on('video-offer', (offer) => {
+        console.log('video offer', offer);
+        let description = new RTCSessionDescription(offer);
+        console.log(description);
+        pc.setRemoteDescription(description);
+        console.log('making it big', pc);
+        // pc.setLocalDescription(offer)
       });
-      socket.on('remove-user', (users) => {
-        userList = users;
-        console.log('remove-users', userList);
-      });
+      // check if media capabilities are present
+      {
+        if (
+          !(
+            'mediaDevices' in navigator &&
+            'getUserMedia' in navigator.mediaDevices
+          )
+        ) {
+          document.body.innerHTML = 'Browser unsupported';
+        }
+      }
 
+      // instantiation
+      // getUserMedia constraints obj
       const constraints = {
         video: true,
-        // audio: true,
       };
       let video = null;
-      if (
-        !(
-          'mediaDevices' in navigator &&
-          'getUserMedia' in navigator.mediaDevices
-        )
-      ) {
-        document.body.innerHTML = 'Browser unsupported';
-      }
+      let camTrack = null;
+      // check for devices
       navigator.mediaDevices
         .getUserMedia(constraints)
-        .then((data) => {
+        .then((stream) => {
+          //assign stream to video element
           video = document.getElementById('video-element');
-          video.srcObject = data;
+          video.srcObject = stream;
           video.autoplay = true;
-          //   video.src = window.URL.createObjectURL(data);
+          // get tracks from stream
+          camTrack = stream.getVideoTracks()[0];
+          // add to RTC
+          pc.addTrack(camTrack);
+          // generate description and emit offer
+          pc.createOffer().then((description) => {
+            pc.setLocalDescription(description).then(() => {
+              // console.log(description);
+              console.log(pc.localDescription);
+
+              socket.emit('video-offer', description);
+            });
+          });
         })
         .catch((e) => {
           console.error(e);

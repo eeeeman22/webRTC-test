@@ -1,7 +1,18 @@
-var app = require('express')();
+const app = require('express')();
+const fs = require('fs');
 const colors = require('colors');
-var http = require('http').createServer(app);
-var io = require('socket.io')(http);
+var https = require('https')
+  .createServer(
+    {
+      key: fs.readFileSync(__dirname + '/server.key'),
+      cert: fs.readFileSync(__dirname + '/server.cert'),
+    },
+    app
+  )
+  .listen(80, () => {
+    console.log('listening on 80');
+  });
+var io = require('socket.io')(https);
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/static/video.html');
@@ -11,10 +22,10 @@ const users = [];
 io.on('connection', (socket) => {
   console.log('new connection', socket.id);
   users.push(socket.id);
-  socket.broadcast.emit('add-user', users);
 
   // VIDEO OFFER
   socket.on('video-offer', (offer) => {
+    console.log(`video-offer from ${socket.id}`.cyan);
     socket.broadcast.emit('video-offer', offer);
   });
 
@@ -39,8 +50,4 @@ io.on('connection', (socket) => {
     // socket.emit('response', `received: ${msg}`);
     io.emit('response', `received: ${msg}`);
   });
-});
-
-http.listen(80, () => {
-  console.log('listening on 80');
 });
