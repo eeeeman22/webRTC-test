@@ -17,10 +17,14 @@ var io = require('socket.io')(https);
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/static/video.html');
 });
+app.get('/video.js', (req, res) => {
+  res.sendFile(__dirname + '/static/video.js');
+});
+
 const users = [];
 
 io.on('connection', (socket) => {
-  console.log('new connection', socket.id);
+  console.log('new connection'.green, socket.id);
   users.push(socket.id);
 
   // VIDEO OFFER
@@ -31,23 +35,18 @@ io.on('connection', (socket) => {
 
   // VIDEO ANSWER
   socket.on('video-answer', (answer) => {
-    socket.broadcast.emit('video-answer', answer);
+    socket.broadcast.emit('video-answer'.gray, answer);
   });
 
   // DISCONNECT
   socket.on('disconnect', () => {
     users.splice(
+      // index of current user
       users.findIndex((v) => v === socket.id),
+      // delete it
       1
     );
     console.log(`deleted ${socket.id}`.red, users);
     socket.broadcast.emit('remove-user', users);
-  });
-
-  // MESSAGE
-  socket.on('message', (msg) => {
-    console.log('INCOMING'.cyan, msg);
-    // socket.emit('response', `received: ${msg}`);
-    io.emit('response', `received: ${msg}`);
   });
 });

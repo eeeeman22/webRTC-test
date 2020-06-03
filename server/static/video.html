@@ -6,65 +6,16 @@
     <title>Document</title>
   </head>
   <body>
-    <video id="video-element"></video>
+    <ul>
+      <li>
+        <video id="video1" class="video-element" autoplay></video>
+      </li>
+      <li>
+        <video id="video2" class="video-element" autoplay></video>
+      </li>
+    </ul>
+
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-      // set up socket
-      let userList = [];
-      const pc = new RTCPeerConnection();
-      const socket = io();
-      socket.on('video-offer', (offer) => {
-        console.log('video offer', offer);
-        let description = new RTCSessionDescription(offer);
-        console.log(description);
-        pc.setRemoteDescription(description);
-        console.log('making it big', pc);
-        // pc.setLocalDescription(offer)
-      });
-      // check if media capabilities are present
-      {
-        if (
-          !(
-            'mediaDevices' in navigator &&
-            'getUserMedia' in navigator.mediaDevices
-          )
-        ) {
-          document.body.innerHTML = 'Browser unsupported';
-        }
-      }
-
-      // instantiation
-      // getUserMedia constraints obj
-      const constraints = {
-        video: true,
-      };
-      let video = null;
-      let camTrack = null;
-      // check for devices
-      navigator.mediaDevices
-        .getUserMedia(constraints)
-        .then((stream) => {
-          //assign stream to video element
-          video = document.getElementById('video-element');
-          video.srcObject = stream;
-          video.autoplay = true;
-          // get tracks from stream
-          camTrack = stream.getVideoTracks()[0];
-          // add to RTC
-          pc.addTrack(camTrack);
-          // generate description and emit offer
-          pc.createOffer().then((description) => {
-            pc.setLocalDescription(description).then(() => {
-              // console.log(description);
-              console.log(pc.localDescription);
-
-              socket.emit('video-offer', description);
-            });
-          });
-        })
-        .catch((e) => {
-          console.error(e);
-        });
-    </script>
+    <script src="video.js"></script>
   </body>
 </html>
