@@ -7,20 +7,27 @@ if (
 
 // set up socket
 let userList = [];
-const pc = new RTCPeerConnection();
 const socket = io();
 
-const constraints = {
+const mediaConstraints = {
   video: true,
 };
 
 const makeVideoOffer = async () => {
   try {
+    const pc = new RTCPeerConnection({
+      // self hosted STUN server from node.
+      iceServers: [{ urls: 'stun:100.2.208.235' }],
+    });
+    pc.onicecandidate = ({ candidate }) => {
+      socket.emit('new-ice-candidate', candidate);
+    };
     const video = document.getElementById('video1');
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     video.srcObject = stream;
-    const camTrack = stream.getVideoTracks()[0];
-    pc.addTrack(camTrack);
+    stream.getVideoTracks().forEach((track) => {
+      pc.addTrack(track);
+    });
     const description = await pc.createOffer();
     await pc.setLocalDescription(description);
     console.log('sending description', pc.localDescription);
@@ -33,11 +40,6 @@ makeVideoOffer();
 
 socket.on('video-offer', (offer) => {
   try {
-    const description = new RTCSessionDescription(offer);
-    // prettier-ignore
-    await pc.setRemoteDescription(description)
-    const answer = await pc.createAnswer()
-    socket.emit('video-answer', answer);
   } catch (err) {
     throw err;
   }

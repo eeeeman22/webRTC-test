@@ -1,6 +1,15 @@
 const app = require('express')();
 const fs = require('fs');
 const colors = require('colors');
+const stun = require('stun');
+try {
+  (async () => {
+    const res = await stun.request('stun.l.google.com:19302');
+    console.log('your ip', res.getXorAddress().address);
+  })();
+} catch (err) {
+  throw err;
+}
 var https = require('https')
   .createServer(
     {
@@ -36,6 +45,11 @@ io.on('connection', (socket) => {
   // VIDEO ANSWER
   socket.on('video-answer', (answer) => {
     socket.broadcast.emit('video-answer'.gray, answer);
+  });
+
+  // ICE-CANDIDATE
+  socket.on('new-ice-candidate', (candidate) => {
+    console.log(`new-ice-candidate: ${JSON.stringify(candidate)}`.magenta);
   });
 
   // DISCONNECT
