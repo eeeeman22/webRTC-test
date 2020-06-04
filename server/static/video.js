@@ -28,6 +28,18 @@ const makeVideoOffer = async () => {
     stream.getVideoTracks().forEach((track) => {
       pc.addTrack(track);
     });
+    pc.ontrack(({ streams }) => {
+      document.getElementById('video2').srcObject = streams[0];
+    });
+    pc.onnegotiationneeded = async () => {
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('video-offer', pc.localDescription);
+      } catch (err) {
+        throw err;
+      }
+    };
     const description = await pc.createOffer();
     await pc.setLocalDescription(description);
     console.log('sending description', pc.localDescription);
